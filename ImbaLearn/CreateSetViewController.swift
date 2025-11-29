@@ -325,6 +325,8 @@ class CreateSetViewController: BaseViewController {
         }
         
         // Save logic here
+
+        resetForm()
         showAlert(message: "Set saved successfully!")
     }
     
@@ -338,6 +340,29 @@ class CreateSetViewController: BaseViewController {
     }
     
     // MARK: - Helper Methods
+    
+    private func resetForm() {
+        // Clear text fields
+        titleTextField.text = ""
+        descriptionTextField.text = ""
+        
+        // Reset to initial two empty terms
+        terms = [
+            Term(term: "", definition: ""),
+            Term(term: "", definition: "")
+        ]
+        
+        // Reload table view
+        updateTableViewHeight()
+        tableView.reloadData()
+        
+        // Scroll to top
+        scrollView.setContentOffset(CGPoint(x: 0, y: 0), animated: true)
+        
+        // Dismiss keyboard
+        view.endEditing(true)
+    }
+    
     private func updateTableViewHeight() {
         let newHeight = CGFloat(terms.count) * 120
         tableView.constraints.forEach { constraint in

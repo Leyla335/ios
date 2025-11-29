@@ -44,7 +44,7 @@ class TermCell: UITableViewCell {
         let button = UIButton(type: .system)
         button.setTitle("−", for: .normal)
         button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = .red
+        button.backgroundColor = .pinkButton
         button.layer.cornerRadius = 12
         button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 16)
         button.translatesAutoresizingMaskIntoConstraints = false
