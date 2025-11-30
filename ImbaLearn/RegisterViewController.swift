@@ -24,6 +24,7 @@ class RegisterViewController: BaseViewController {
     
     private lazy var headerView: UIView = {
         let view = UIView()
+        view.backgroundColor = .color3
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -31,7 +32,7 @@ class RegisterViewController: BaseViewController {
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.text = "Register"
-        label.textColor = .white
+        label.textColor = .text
         label.font = .systemFont(ofSize: 32, weight: .bold)
         label.alpha = 1
         label.textAlignment = .center
@@ -205,7 +206,7 @@ class RegisterViewController: BaseViewController {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
-        setupGradientHeader()
+      //  setupGradientHeader()
         setupTextFields()
     }
     
@@ -240,24 +241,24 @@ class RegisterViewController: BaseViewController {
         setupKeyboardAvoidance(with: scrollView)
     }
     
-    private func setupGradientHeader() {
-        // Create gradient layer
-        let gradientLayer = CAGradientLayer()
-        gradientLayer.colors = [
-            UIColor.pinkButton.withAlphaComponent(0.7).cgColor, // Lighter pink
-            UIColor.greenButton.withAlphaComponent(0.7).cgColor
-        ]
-        gradientLayer.locations = [0.0, 1.0]
-        gradientLayer.startPoint = CGPoint(x: 0.0, y: 0.5)
-        gradientLayer.endPoint = CGPoint(x: 1.0, y: 0.5)
-        
-        // Set the frame after layout
-        DispatchQueue.main.async {
-            gradientLayer.frame = self.headerView.bounds
-        }
-        
-        headerView.layer.insertSublayer(gradientLayer, at: 0)
-    }
+//    private func setupGradientHeader() {
+//        // Create gradient layer
+//        let gradientLayer = CAGradientLayer()
+//        gradientLayer.colors = [
+//            UIColor.pinkButton.withAlphaComponent(0.7).cgColor, // Lighter pink
+//            UIColor.greenButton.withAlphaComponent(0.7).cgColor
+//        ]
+//        gradientLayer.locations = [0.0, 1.0]
+//        gradientLayer.startPoint = CGPoint(x: 0.0, y: 0.5)
+//        gradientLayer.endPoint = CGPoint(x: 1.0, y: 0.5)
+//        
+//        // Set the frame after layout
+//        DispatchQueue.main.async {
+//            gradientLayer.frame = self.headerView.bounds
+//        }
+//        
+//        headerView.layer.insertSublayer(gradientLayer, at: 0)
+//    }
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()

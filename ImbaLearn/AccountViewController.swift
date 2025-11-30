@@ -73,24 +73,25 @@ class AccountViewController: BaseViewController {
         return label
     }()
     
-    private lazy var nameSurnameLabel: UILabel = {
+    // Name Section - SEPARATE
+    private lazy var nameFieldLabel: UILabel = {
         let label = UILabel()
-        label.text = "Name Surname"
+        label.text = "Name"
         label.textColor = .text
         label.font = .systemFont(ofSize: 16, weight: .bold)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
     
-    private lazy var nameSurnameTextField: UITextField = {
+    private lazy var nameTextField: UITextField = {
         let textField = UITextField()
-        textField.placeholder = "Enter your name and surname"
+        textField.placeholder = "Enter your name"
         textField.borderStyle = .none
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 12
         textField.layer.masksToBounds = true
         textField.isEnabled = false
-        textField.text = "Leyla Aliyeva" // Pre-filled with user data
+        textField.text = "Leyla"
         textField.translatesAutoresizingMaskIntoConstraints = false
         
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: textField.frame.height))
@@ -100,6 +101,35 @@ class AccountViewController: BaseViewController {
         return textField
     }()
     
+    // Surname Section - SEPARATE
+    private lazy var surnameFieldLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Surname"
+        label.textColor = .text
+        label.font = .systemFont(ofSize: 16, weight: .bold)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private lazy var surnameTextField: UITextField = {
+        let textField = UITextField()
+        textField.placeholder = "Enter your surname"
+        textField.borderStyle = .none
+        textField.backgroundColor = .white
+        textField.layer.cornerRadius = 12
+        textField.layer.masksToBounds = true
+        textField.isEnabled = false
+        textField.text = "Aliyeva" // Only last name
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        
+        let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: textField.frame.height))
+        textField.leftView = paddingView
+        textField.leftViewMode = .always
+        
+        return textField
+    }()
+    
+    // Email Section
     private lazy var emailFieldLabel: UILabel = {
         let label = UILabel()
         label.text = "Email"
@@ -117,7 +147,7 @@ class AccountViewController: BaseViewController {
         textField.layer.cornerRadius = 12
         textField.layer.masksToBounds = true
         textField.isEnabled = false
-        textField.text = "leyla@example.com" // Pre-filled with user data
+        textField.text = "leyla@example.com"
         textField.keyboardType = .emailAddress
         textField.autocapitalizationType = .none
         textField.translatesAutoresizingMaskIntoConstraints = false
@@ -129,6 +159,7 @@ class AccountViewController: BaseViewController {
         return textField
     }()
     
+    // Password Section
     private lazy var passwordLabel: UILabel = {
         let label = UILabel()
         label.text = "Password"
@@ -146,7 +177,7 @@ class AccountViewController: BaseViewController {
         textField.layer.cornerRadius = 12
         textField.layer.masksToBounds = true
         textField.isSecureTextEntry = true
-        textField.isEnabled = false // Not editable directly
+        textField.isEnabled = false
         textField.translatesAutoresizingMaskIntoConstraints = false
         
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: textField.frame.height))
@@ -208,16 +239,17 @@ class AccountViewController: BaseViewController {
         avatarContainer.addSubview(avatarCircle)
         avatarCircle.addSubview(avatarLabel)
         
+        // Keep combined name in avatar section (as it was before)
         userInfoStack.addArrangedSubview(nameLabel)
         userInfoStack.addArrangedSubview(emailLabel)
         
         // Add all elements to content view
-        contentView.addSubviews(avatarContainer, userInfoStack, nameSurnameLabel, nameSurnameTextField, emailFieldLabel, emailTextField, passwordLabel, passwordTextField, changePasswordButton, logoutButton, deleteAccountButton)
+        contentView.addSubviews(avatarContainer, userInfoStack, nameFieldLabel, nameTextField, surnameFieldLabel, surnameTextField, emailFieldLabel, emailTextField, passwordLabel, passwordTextField, changePasswordButton, logoutButton, deleteAccountButton)
     }
     
     private func setupTextFields() {
         // Set up text field delegates
-        let textFields = [nameSurnameTextField, emailTextField]
+        let textFields = [nameTextField, surnameTextField, emailTextField]
         textFields.forEach { textField in
             textField.delegate = self
         }
@@ -230,6 +262,7 @@ class AccountViewController: BaseViewController {
         let padding: CGFloat = 20
         let fieldHeight: CGFloat = 50
         let labelHeight: CGFloat = 20
+        let verticalSpacing: CGFloat = 20
         
         NSLayoutConstraint.activate([
             // Scroll View
@@ -261,25 +294,37 @@ class AccountViewController: BaseViewController {
             avatarLabel.centerXAnchor.constraint(equalTo: avatarCircle.centerXAnchor),
             avatarLabel.centerYAnchor.constraint(equalTo: avatarCircle.centerYAnchor),
             
-            // User Info Stack
+            // User Info Stack - KEEP AS BEFORE
             userInfoStack.leadingAnchor.constraint(equalTo: avatarContainer.trailingAnchor, constant: 16),
             userInfoStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding),
             userInfoStack.centerYAnchor.constraint(equalTo: avatarContainer.centerYAnchor),
             
-            // Name Surname Label
-            nameSurnameLabel.topAnchor.constraint(equalTo: avatarContainer.bottomAnchor, constant: 40),
-            nameSurnameLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: padding),
-            nameSurnameLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding),
-            nameSurnameLabel.heightAnchor.constraint(equalToConstant: labelHeight),
+            // Name Field Label
+            nameFieldLabel.topAnchor.constraint(equalTo: avatarContainer.bottomAnchor, constant: 40),
+            nameFieldLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: padding),
+            nameFieldLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding),
+            nameFieldLabel.heightAnchor.constraint(equalToConstant: labelHeight),
             
-            // Name Surname Text Field
-            nameSurnameTextField.topAnchor.constraint(equalTo: nameSurnameLabel.bottomAnchor, constant: 8),
-            nameSurnameTextField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: padding),
-            nameSurnameTextField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding),
-            nameSurnameTextField.heightAnchor.constraint(equalToConstant: fieldHeight),
+            // Name Text Field
+            nameTextField.topAnchor.constraint(equalTo: nameFieldLabel.bottomAnchor, constant: 8),
+            nameTextField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: padding),
+            nameTextField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding),
+            nameTextField.heightAnchor.constraint(equalToConstant: fieldHeight),
+            
+            // Surname Field Label
+            surnameFieldLabel.topAnchor.constraint(equalTo: nameTextField.bottomAnchor, constant: verticalSpacing),
+            surnameFieldLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: padding),
+            surnameFieldLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding),
+            surnameFieldLabel.heightAnchor.constraint(equalToConstant: labelHeight),
+            
+            // Surname Text Field
+            surnameTextField.topAnchor.constraint(equalTo: surnameFieldLabel.bottomAnchor, constant: 8),
+            surnameTextField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: padding),
+            surnameTextField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding),
+            surnameTextField.heightAnchor.constraint(equalToConstant: fieldHeight),
             
             // Email Field Label
-            emailFieldLabel.topAnchor.constraint(equalTo: nameSurnameTextField.bottomAnchor, constant: 30),
+            emailFieldLabel.topAnchor.constraint(equalTo: surnameTextField.bottomAnchor, constant: verticalSpacing),
             emailFieldLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: padding),
             emailFieldLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding),
             emailFieldLabel.heightAnchor.constraint(equalToConstant: labelHeight),
@@ -291,29 +336,29 @@ class AccountViewController: BaseViewController {
             emailTextField.heightAnchor.constraint(equalToConstant: fieldHeight),
             
             // Password Label
-            passwordLabel.topAnchor.constraint(equalTo: emailTextField.bottomAnchor, constant: 30),
+            passwordLabel.topAnchor.constraint(equalTo: emailTextField.bottomAnchor, constant: verticalSpacing),
             passwordLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: padding),
             passwordLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding),
             passwordLabel.heightAnchor.constraint(equalToConstant: labelHeight),
             
-            // Password Text Field - now full width again
+            // Password Text Field
             passwordTextField.topAnchor.constraint(equalTo: passwordLabel.bottomAnchor, constant: 8),
             passwordTextField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: padding),
-            passwordTextField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding), // Full width
+            passwordTextField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding),
             passwordTextField.heightAnchor.constraint(equalToConstant: fieldHeight),
             
-            // Change Password Button - UNDERNEATH password field, aligned to right
-            changePasswordButton.topAnchor.constraint(equalTo: passwordTextField.bottomAnchor, constant: 8), // Small gap underneath password field
+            // Change Password Button
+            changePasswordButton.topAnchor.constraint(equalTo: passwordTextField.bottomAnchor, constant: 8),
             changePasswordButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding),
             changePasswordButton.heightAnchor.constraint(equalToConstant: 30),
             
-            // Logout Button - big button with frame, below change password
-            logoutButton.topAnchor.constraint(equalTo: changePasswordButton.bottomAnchor, constant: 30), // More space after change password
+            // Logout Button
+            logoutButton.topAnchor.constraint(equalTo: changePasswordButton.bottomAnchor, constant: 30),
             logoutButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: padding),
             logoutButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding),
             logoutButton.heightAnchor.constraint(equalToConstant: 55),
             
-            // Delete Account Button - without frame, underneath logout
+            // Delete Account Button
             deleteAccountButton.topAnchor.constraint(equalTo: logoutButton.bottomAnchor, constant: 20),
             deleteAccountButton.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             deleteAccountButton.heightAnchor.constraint(equalToConstant: 30),
@@ -361,7 +406,6 @@ class AccountViewController: BaseViewController {
     private func performAccountDeletion() {
         // TODO: Implement account deletion logic
         print("Account deletion requested")
-        // After deletion, you might want to show authentication screen
         if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate {
             sceneDelegate.showAuthentication()
         }
