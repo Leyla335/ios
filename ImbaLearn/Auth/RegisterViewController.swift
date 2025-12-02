@@ -460,12 +460,21 @@ class RegisterViewController: BaseViewController {
             preferredStyle: .alert
         )
         
-        alert.addAction(UIAlertAction(title: "Continue", style: .default) { [weak self] _ in
-            // Navigate to main screen since user is logged in
-            self?.navigateToMainScreen()
-        })
-        
         present(alert, animated: true)
+        
+        // Auto-dismiss and navigate after a brief delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            alert.dismiss(animated: true) {
+                // Add a smooth transition
+                UIView.animate(withDuration: 0.2, animations: {
+                    self?.view.alpha = 0.8
+                }) { _ in
+                    if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate {
+                        sceneDelegate.showMainApp(animated: true)
+                    }
+                }
+            }
+        }
     }
     
     private func navigateToMainScreen() {

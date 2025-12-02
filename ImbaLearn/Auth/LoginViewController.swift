@@ -127,7 +127,6 @@ class LoginViewController: BaseViewController {
         setupConstraints()
         setupGradientHeader()
         setupTextFields()
-        testLoginEndpoint()
         
         
     }
@@ -265,8 +264,30 @@ class LoginViewController: BaseViewController {
     }
     
     @objc private func loginTapped() {
-        // TODO: Implement login logic
-        showMainApp()
+        // Hide keyboard
+        view.endEditing(true)
+        
+        // Validate inputs
+        guard validateInputs() else { return }
+        
+        // Show loading
+        showLoading()
+        
+        // Create login request
+        let loginRequest = LoginRequest(
+            email: emailTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
+            password: passwordTextField.text ?? ""
+        )
+        
+        print("🔐 Attempting login for: \(loginRequest.email)")
+        
+        // Call API
+        NetworkManager.shared.login(request: loginRequest) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.hideLoading()
+                self?.handleLoginResult(result)
+            }
+        }
     }
     
     @objc private func registerTapped() {
@@ -274,34 +295,178 @@ class LoginViewController: BaseViewController {
         navigationController?.pushViewController(registerVC, animated: true)
     }
     
-    // In LoginViewController.swift, add this method:
-    private func testLoginEndpoint() {
-        let testRequest = LoginRequest(
-            email: "leylaaliyeva325@gmail.com",  // Use your registered email
-                   password: "12345678" 
-        )
+    // MARK: - Validation
+    private func validateInputs() -> Bool {
+        // Validate email
+        guard let email = emailTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !email.isEmpty else {
+            showAlert(title: "Validation Error", message: "Please enter your email")
+            emailTextField.becomeFirstResponder()
+            return false
+        }
         
-        print("Testing login endpoint...")
+        guard isValidEmail(email) else {
+            showAlert(title: "Validation Error", message: "Please enter a valid email address")
+            emailTextField.becomeFirstResponder()
+            return false
+        }
         
-        NetworkManager.shared.login(request: testRequest) { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let response):
-                    print("✅ Login endpoint test SUCCESS")
-                    print("Response: ok=\(response.ok), message=\(response.message)")
-                    
-                case .failure(let error):
-                    print("❌ Login endpoint test FAILED")
-                    print("Error: \(error.localizedDescription)")
+        // Validate password
+        guard let password = passwordTextField.text, !password.isEmpty else {
+            showAlert(title: "Validation Error", message: "Please enter your password")
+            passwordTextField.becomeFirstResponder()
+            return false
+        }
+        
+        guard password.count >= 6 else {
+            showAlert(title: "Validation Error", message: "Password must be at least 6 characters")
+            passwordTextField.becomeFirstResponder()
+            return false
+        }
+        
+        return true
+    }
+    
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPred = NSPredicate(format: "SELF MATCHES %@", emailRegEx)
+        return emailPred.evaluate(with: email)
+    }
+    
+    // MARK: - Handle Login Result
+    private func handleLoginResult(_ result: Result<AuthResponse, NetworkError>) {
+        switch result {
+        case .success(let response):
+            if response.ok {
+                // Add a small delay for better UX
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                    // Navigate with animation
+                    self?.navigateToMainApp()
                 }
+            } else {
+                showAlert(title: "Login Failed", message: response.message)
+            }
+            
+        case .failure(let error):
+            handleNetworkError(error)
+        }
+    }
+
+    private func navigateToMainApp() {
+        // Optional: Add a brief fade animation before navigation
+        UIView.animate(withDuration: 0.2, animations: {
+            self.view.alpha = 0.8
+        }) { _ in
+            if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate {
+                sceneDelegate.showMainApp(animated: true)
             }
         }
     }
     
-    private func showMainApp() {
-        // This will show our tab bar controller
-        if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate {
-            sceneDelegate.showMainApp()
+    private func showSuccessAndNavigate(message: String) {
+        // Show a brief success message then navigate
+        let alert = UIAlertController(
+            title: "Success!",
+            message: message,
+            preferredStyle: .alert
+        )
+        
+        present(alert, animated: true)
+        
+        // Dismiss after 1 second and navigate
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            alert.dismiss(animated: true) {
+                self?.navigateToMainApp()
+            }
         }
+    }
+    
+    private func handleNetworkError(_ error: NetworkError) {
+        switch error {
+        case .invalidURL:
+            showAlert(title: "Error", message: "Invalid URL configuration")
+        case .noData:
+            showAlert(title: "Error", message: "No response from server")
+        case .decodingError(let decodingError):
+            showAlert(title: "Error", message: "Failed to process server response: \(decodingError.localizedDescription)")
+        case .encodingError(let encodingError):
+            showAlert(title: "Error", message: "Failed to prepare request: \(encodingError.localizedDescription)")
+        case .serverError(let message):
+            // Try to parse array error messages
+            if let data = message.data(using: .utf8),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                
+                if let messages = json["message"] as? [String] {
+                    // Error messages in array format
+                    let errorMessage = messages.joined(separator: "\n")
+                    showAlert(title: "Validation Error", message: errorMessage)
+                } else if let errorMessage = json["message"] as? String {
+                    // Single error message
+                    showAlert(title: "Error", message: errorMessage)
+                } else {
+                    showAlert(title: "Error", message: message)
+                }
+            } else {
+                showAlert(title: "Error", message: message)
+            }
+        case .unauthorized:
+            showAlert(title: "Login Failed", message: "Invalid email or password")
+        case .forbidden:
+            showAlert(title: "Access Denied", message: "You don't have permission")
+        case .notFound:
+            showAlert(title: "User Not Found", message: "No account found with this email")
+        case .rateLimited:
+            showAlert(title: "Too Many Requests", message: "Please try again later")
+        case .networkError(let networkError):
+            showAlert(title: "Network Error", message: networkError.localizedDescription)
+        case .unknown:
+            showAlert(title: "Error", message: "An unknown error occurred")
+        }
+    }
+    
+    // MARK: - Helper Methods
+    private func showLoading() {
+        let loadingView = UIView(frame: view.bounds)
+        loadingView.backgroundColor = UIColor.black.withAlphaComponent(0.3)
+        loadingView.tag = 999
+        
+        let activityIndicator = UIActivityIndicatorView(style: .large)
+        activityIndicator.center = loadingView.center
+        activityIndicator.startAnimating()
+        loadingView.addSubview(activityIndicator)
+        
+        view.addSubview(loadingView)
+        view.isUserInteractionEnabled = false
+    }
+    
+    private func hideLoading() {
+        view.subviews.forEach { subview in
+            if subview.tag == 999 {
+                subview.removeFromSuperview()
+            }
+        }
+        view.isUserInteractionEnabled = true
+    }
+    
+    private func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+}
+
+// MARK: - UITextFieldDelegate
+extension LoginViewController {
+    override func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        switch textField {
+        case emailTextField:
+            passwordTextField.becomeFirstResponder()
+        case passwordTextField:
+            textField.resignFirstResponder()
+            loginTapped()
+        default:
+            textField.resignFirstResponder()
+        }
+        return true
     }
 }
