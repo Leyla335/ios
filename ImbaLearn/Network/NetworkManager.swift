@@ -184,8 +184,10 @@ class NetworkManager {
                 // Unauthorized - clear token
                 self?.authToken = nil
                 DispatchQueue.main.async {
-                    completion(.failure(.unauthorized))
-                }
+                       // Send notification that session expired
+                       NotificationCenter.default.post(name: .sessionExpired, object: nil)
+                       completion(.failure(.unauthorized))
+                   }
                 
             case 403:
                 DispatchQueue.main.async {
@@ -234,6 +236,18 @@ class NetworkManager {
             request(endpoint: endpoint, method: .post, body: bodyData, requiresAuth: requiresAuth, completion: completion)
         } catch {
             completion(.failure(.encodingError(error)))
+        }
+    }
+    
+    func validateToken(completion: @escaping (Bool) -> Void) {
+        request(endpoint: "/users/me", method: .get, requiresAuth: true) { (result: Result<UserProfileResponse, NetworkError>) in
+            switch result {
+            case .success:
+                completion(true)
+            case .failure(let error):
+                print("Token validation failed: \(error)")
+                completion(false)
+            }
         }
     }
     
@@ -402,4 +416,9 @@ class NetworkManager {
         print("====================\n")
         #endif
     }
+}
+
+extension Notification.Name {
+    static let userDidLogout = Notification.Name("userDidLogout")
+    static let sessionExpired = Notification.Name("sessionExpired")
 }
