@@ -1,10 +1,3 @@
-//
-//  ModuleCell.swift
-//  ImbaLearn
-//
-//  Created by Leyla Aliyeva on 30.11.25.
-//
-
 import UIKit
 
 class ModuleCell: UITableViewCell {
@@ -25,11 +18,31 @@ class ModuleCell: UITableViewCell {
         return label
     }()
     
+    private lazy var privateIcon: UIImageView = {
+        let imageView = UIImageView()
+        imageView.image = UIImage(systemName: "lock.fill")
+        imageView.tintColor = .gray
+        imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.isHidden = true
+        return imageView
+    }()
+    
     private lazy var labelsStack: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [titleLabel, cardCountLabel])
         stack.axis = .vertical
         stack.spacing = 4
         stack.alignment = .leading
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+    
+    private lazy var mainStack: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [labelsStack, privateIcon])
+        stack.axis = .horizontal
+        stack.spacing = 8
+        stack.alignment = .center
+        stack.distribution = .fill
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
@@ -49,24 +62,32 @@ class ModuleCell: UITableViewCell {
         contentView.layer.cornerRadius = 12
         contentView.layer.masksToBounds = true
         
-        contentView.addSubview(labelsStack)
+        contentView.addSubview(mainStack)
     }
     
     private func setupConstraints() {
         let padding: CGFloat = 16
         
         NSLayoutConstraint.activate([
-            // Labels Stack
-            labelsStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: padding),
-            labelsStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding),
-            labelsStack.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
+            mainStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: padding),
+            mainStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding),
+            mainStack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+            mainStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12),
+            
+            privateIcon.widthAnchor.constraint(equalToConstant: 20),
+            privateIcon.heightAnchor.constraint(equalToConstant: 20)
         ])
     }
     
-    func configure(with studySet: StudySett, backgroundColor: UIColor) {
-        titleLabel.text = studySet.title
-        cardCountLabel.text = "\(studySet.cardCount) cards"
+    func configure(with module: ModuleResponse, backgroundColor: UIColor) {
+        titleLabel.text = module.title
+        
+        // Use the progress data directly
+        let total = module.progress?.total ?? 0
+        cardCountLabel.text = "\(total) card\(total == 1 ? "" : "s")"
+        
+        // Show lock icon for private modules
+        privateIcon.isHidden = !module.isPrivate
         contentView.backgroundColor = backgroundColor
     }
 }
-

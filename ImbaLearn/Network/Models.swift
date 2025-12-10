@@ -90,38 +90,46 @@ struct CreateModuleRequest: Codable {
     }
 }
 
-struct ModuleResponse: Codable {
-    let id: String
-        let slug: String
-        let title: String
-        let description: String?
-        let isPrivate: Bool
-        let userId: String
-        let termsCount: Int?
-        let progress: ProgressData?
-        let createdAt: String?
-        let updatedAt: String?
-}
-
+// Simple Progress model that matches API response
 struct ProgressData: Codable {
-    let notStarted: Double
-    let inProgress: Double
+    let not_started: Double
+    let in_progress: Double
     let completed: Double
     
-    enum CodingKeys: String, CodingKey {
-        case notStarted = "not_started"
-        case inProgress = "in_progress"
-        case completed
+    // Computed properties for cleaner Swift usage
+    var notStarted: Double { return not_started }
+    var inProgress: Double { return in_progress }
+    
+    var total: Int {
+        return Int(not_started + in_progress + completed)
+    }
+}
+
+struct ModuleResponse: Codable {
+    let id: String
+    let slug: String
+    let title: String
+    let description: String?
+    let isPrivate: Bool
+    let userId: String
+    let progress: ProgressData?
+    
+    // Optional fields
+    let createdAt: String?
+    let updatedAt: String?
+    
+    // Computed property
+    var termsCount: Int? {
+        return progress?.total
     }
 }
 
 struct CreateModuleResponse: Codable {
     let ok: Bool
     let message: String
-    let data: ModuleResponse?  
+    let data: ModuleResponse?
 }
 
-// For fetching modules
 struct UserModulesResponse: Codable {
     let ok: Bool
     let message: String
@@ -158,7 +166,7 @@ struct TermResponse: Codable {
     let isStarred: Bool
     let createdAt: String?
     let updatedAt: String?
-    let moduleId: String?  // Make optional since response might not have it
+    let moduleId: String?  // optional since response might not have it
     
     enum CodingKeys: String, CodingKey {
         case id, term, status, definition, isStarred, createdAt, updatedAt, moduleId
@@ -182,7 +190,7 @@ struct TermsListResponse: Codable {
 struct Term {
     var term: String
     var definition: String
-    var isStarred: Bool = false  // Add this
+    var isStarred: Bool = false  
     
     // Helper to convert to CreateTermRequest
     func toCreateTermRequest(moduleId: String) -> CreateTermRequest {

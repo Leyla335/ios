@@ -4,8 +4,6 @@
 //
 //  Created by Leyla Aliyeva on 01.12.25.
 //
-// NetworkManager.swift
-// NetworkManager.swift
 import Foundation
 
 // MARK: - Network Errors
@@ -86,12 +84,11 @@ class NetworkManager {
         self.session = URLSession(configuration: configuration)
         
         self.decoder = JSONDecoder()
-        self.decoder.keyDecodingStrategy = .convertFromSnakeCase
-        self.decoder.dateDecodingStrategy = .iso8601
-        
-        self.encoder = JSONEncoder()
-        self.encoder.keyEncodingStrategy = .convertToSnakeCase
-        self.encoder.dateEncodingStrategy = .iso8601
+           self.decoder.keyDecodingStrategy = .useDefaultKeys
+           self.decoder.dateDecodingStrategy = .iso8601
+           self.encoder = JSONEncoder()
+           self.encoder.keyEncodingStrategy = .useDefaultKeys
+           self.encoder.dateEncodingStrategy = .iso8601
     }
     
     // MARK: - Generic Request Method
@@ -331,15 +328,6 @@ class NetworkManager {
     func getModuleById(moduleId: String, completion: @escaping (Result<CreateModuleResponse, NetworkError>) -> Void) {
         request(endpoint: "/modules/\(moduleId)", method: .get, requiresAuth: true, completion: completion)
     }
-
-//    func updateModule(moduleId: String, request: CreateModuleRequest, completion: @escaping (Result<CreateModuleResponse, NetworkError>) -> Void) {
-//        do {
-//            let bodyData = try encoder.encode(request)
-//            request(endpoint: "/modules/\(moduleId)", method: .put, body: bodyData, requiresAuth: true, completion: completion)
-//        } catch {
-//            completion(.failure(.encodingError(error)))
-//        }
-//    }
 
     func deleteModule(moduleId: String, completion: @escaping (Result<AuthResponse, NetworkError>) -> Void) {
         request(endpoint: "/modules/\(moduleId)", method: .delete, requiresAuth: true, completion: completion)

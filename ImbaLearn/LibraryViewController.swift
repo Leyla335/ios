@@ -2,8 +2,6 @@
 //  LibraryViewController.swift
 //  ImbaLearn
 //
-//  Created by Leyla Aliyeva on 17.11.25.
-//
 
 import UIKit
 
@@ -30,15 +28,14 @@ class LibraryViewController: BaseViewController {
         textField.translatesAutoresizingMaskIntoConstraints = false
         
         textField.layer.shadowColor = UIColor.black.cgColor
-           textField.layer.shadowOffset = CGSize(width: 0, height: 2)
-           textField.layer.shadowRadius = 4
-           textField.layer.shadowOpacity = 0.1
+        textField.layer.shadowOffset = CGSize(width: 0, height: 2)
+        textField.layer.shadowRadius = 4
+        textField.layer.shadowOpacity = 0.1
         
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: textField.frame.height))
         textField.leftView = paddingView
         textField.leftViewMode = .always
         
-        // Add search icon
         let searchIcon = UIImageView(image: UIImage(systemName: "magnifyingglass"))
         searchIcon.tintColor = .gray
         searchIcon.frame = CGRect(x: 0, y: 0, width: 20, height: 20)
@@ -57,8 +54,6 @@ class LibraryViewController: BaseViewController {
     
     private lazy var sortButton: UIButton = {
         let button = UIButton(type: .system)
-        
-        // Create up/down arrows icon
         let configuration = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
         let sortIcon = UIImage(systemName: "arrow.up.arrow.down", withConfiguration: configuration)
         
@@ -70,9 +65,9 @@ class LibraryViewController: BaseViewController {
         button.addTarget(self, action: #selector(sortButtonTapped), for: .touchUpInside)
         
         button.layer.shadowColor = UIColor.black.cgColor
-           button.layer.shadowOffset = CGSize(width: 0, height: 2)
-           button.layer.shadowRadius = 4
-           button.layer.shadowOpacity = 0.1
+        button.layer.shadowOffset = CGSize(width: 0, height: 2)
+        button.layer.shadowRadius = 4
+        button.layer.shadowOpacity = 0.1
         return button
     }()
     
@@ -105,10 +100,7 @@ class LibraryViewController: BaseViewController {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
-        
-        // You can replace this with your actual cat image
         imageView.image = UIImage(named: "notFound_cat")
-        
         return imageView
     }()
     
@@ -122,30 +114,31 @@ class LibraryViewController: BaseViewController {
         return label
     }()
     
+    private lazy var refreshControl: UIRefreshControl = {
+        let refreshControl = UIRefreshControl()
+        refreshControl.addTarget(self, action: #selector(refreshData), for: .valueChanged)
+        refreshControl.tintColor = .pinkButton
+        return refreshControl
+    }()
+    
+    private lazy var loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.color = .pinkButton
+        indicator.hidesWhenStopped = true
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        return indicator
+    }()
+    
     // MARK: - Properties
-    private var studySets: [StudySett] = [
-        StudySett(title: "Spanish Vocabulary", cardCount: 45, createdAt: Date().addingTimeInterval(-86400)), // 1 day ago
-        StudySett(title: "Math Formulas", cardCount: 32, createdAt: Date().addingTimeInterval(-172800)), // 2 days ago
-        StudySett(title: "History Dates", cardCount: 28, createdAt: Date().addingTimeInterval(-259200)), // 3 days ago
-        StudySett(title: "Science Terms", cardCount: 56, createdAt: Date().addingTimeInterval(-345600)), // 4 days ago
-        StudySett(title: "French Verbs", cardCount: 23, createdAt: Date().addingTimeInterval(-432000)) // 5 days ago
-    ]
+    private var modules: [ModuleResponse] = []
+    private var filteredModules: [ModuleResponse] = []
+    private var isLoading = false
     
-    private var filteredStudySets: [StudySett] = []
-    private var currentSortOption: SortOption = .date
-    
-    // Define your three colors here
     private let cellColors: [UIColor] = [
-        .color3.withAlphaComponent(0.6),    // Replace with your first color
-        .color.withAlphaComponent(0.6),    // Replace with your second color
-        .gray.withAlphaComponent(0.2)     // Replace with your third color
+        .color3.withAlphaComponent(0.6),
+        .color.withAlphaComponent(0.6),
+        .gray.withAlphaComponent(0.2)
     ]
-    // MARK: - Sort Options
-    private enum SortOption: String, CaseIterable {
-        case date = "Date"
-        case title = "Title"
-        case cardCount = "Card Count"
-    }
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -153,7 +146,12 @@ class LibraryViewController: BaseViewController {
         setupUI()
         setupConstraints()
         setupTableView()
-        updateFilteredData()
+        loadModules()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        loadModules()
     }
     
     private func setupUI() {
@@ -163,9 +161,12 @@ class LibraryViewController: BaseViewController {
         view.addSubview(searchSortStack)
         view.addSubview(tableView)
         view.addSubview(emptyStateView)
+        view.addSubview(loadingIndicator)
         
         emptyStateView.addSubview(emptyStateImageView)
         emptyStateView.addSubview(emptyStateLabel)
+        
+        tableView.refreshControl = refreshControl
     }
     
     private func setupConstraints() {
@@ -183,7 +184,6 @@ class LibraryViewController: BaseViewController {
             searchSortStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -padding),
             searchSortStack.heightAnchor.constraint(equalToConstant: 50),
             
-            // Sort Button width - smaller for icon
             sortButton.widthAnchor.constraint(equalToConstant: 50),
             
             // Table View
@@ -192,19 +192,21 @@ class LibraryViewController: BaseViewController {
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -padding),
             tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             
+            // Loading Indicator
+            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            
             // Empty State View
             emptyStateView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyStateView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             emptyStateView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: padding),
             emptyStateView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -padding),
             
-            // Empty State Image
             emptyStateImageView.topAnchor.constraint(equalTo: emptyStateView.topAnchor),
             emptyStateImageView.centerXAnchor.constraint(equalTo: emptyStateView.centerXAnchor),
             emptyStateImageView.widthAnchor.constraint(equalToConstant: 200),
             emptyStateImageView.heightAnchor.constraint(equalToConstant: 200),
             
-            // Empty State Label
             emptyStateLabel.topAnchor.constraint(equalTo: emptyStateImageView.bottomAnchor, constant: 0),
             emptyStateLabel.leadingAnchor.constraint(equalTo: emptyStateView.leadingAnchor),
             emptyStateLabel.trailingAnchor.constraint(equalTo: emptyStateView.trailingAnchor),
@@ -215,9 +217,98 @@ class LibraryViewController: BaseViewController {
     private func setupTableView() {
         tableView.delegate = self
         tableView.dataSource = self
+        tableView.showsVerticalScrollIndicator = false
     }
     
-    // MARK: - Actions
+    // MARK: - API Methods
+    private func loadModules() {
+        guard !isLoading else { return }
+        
+        isLoading = true
+        loadingIndicator.startAnimating()
+        tableView.isHidden = true
+        emptyStateView.isHidden = true
+        
+        // First, get current user ID if we don't have it
+        if UserDefaults.standard.string(forKey: "currentUserId") == nil {
+            fetchCurrentUserId { [weak self] userId in
+                if let userId = userId {
+                    UserDefaults.standard.set(userId, forKey: "currentUserId")
+                    self?.loadModulesWithUserId(userId)
+                } else {
+                    self?.handleModulesLoadingError("Could not get user ID")
+                }
+            }
+        } else {
+            let userId = UserDefaults.standard.string(forKey: "currentUserId")!
+            loadModulesWithUserId(userId)
+        }
+    }
+
+    private func loadModulesWithUserId(_ userId: String) {
+        NetworkManager.shared.getUserModules { [weak self] result in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                self.isLoading = false
+                self.loadingIndicator.stopAnimating()
+                self.refreshControl.endRefreshing()
+                
+                switch result {
+                case .success(let response):
+                    if response.ok {
+                        // Filter modules to show only the ones created by current user
+                        let allModules = response.data ?? []
+                        self.modules = allModules.filter { module in
+                            module.userId == userId
+                        }
+                        
+                        print("✅ Showing \(self.modules.count) user modules out of \(allModules.count) total")
+                        
+                        self.updateFilteredData()
+                        self.tableView.reloadData()
+                        self.updateEmptyState()
+                        self.tableView.isHidden = false
+                    } else {
+                        self.showError(message: response.message)
+                        self.updateEmptyState()
+                    }
+                    
+                case .failure(let error):
+                    self.showError(message: error.localizedDescription)
+                    self.updateEmptyState()
+                }
+            }
+        }
+    }
+
+    private func fetchCurrentUserId(completion: @escaping (String?) -> Void) {
+        NetworkManager.shared.getUserProfile { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let response):
+                    if response.ok {
+                        let userId = response.data.id
+                        completion(userId)
+                    } else {
+                        completion(nil)
+                    }
+                case .failure:
+                    completion(nil)
+                }
+            }
+        }
+    }
+
+    private func handleModulesLoadingError(_ message: String) {
+        isLoading = false
+        loadingIndicator.stopAnimating()
+        refreshControl.endRefreshing()
+        showError(message: message)
+        updateEmptyState()
+    }
+    
+    // MARK: - Helper Methods
     @objc private func searchTextChanged() {
         updateFilteredData()
     }
@@ -226,47 +317,60 @@ class LibraryViewController: BaseViewController {
         showSortOptions()
     }
     
-    // MARK: - Helper Methods
+    @objc private func refreshData() {
+        loadModules()
+    }
+    
     private func updateFilteredData() {
         let searchText = searchTextField.text?.lowercased() ?? ""
         
         if searchText.isEmpty {
-            filteredStudySets = studySets
+            filteredModules = modules
         } else {
-            filteredStudySets = studySets.filter { $0.title.lowercased().contains(searchText) }
+            filteredModules = modules.filter { module in
+                module.title.lowercased().contains(searchText) ||
+                (module.description?.lowercased().contains(searchText) ?? false)
+            }
         }
         
-        applySort()
-        updateEmptyState()
         tableView.reloadData()
-    }
-    
-    private func applySort() {
-        switch currentSortOption {
-        case .date:
-            filteredStudySets.sort { $0.createdAt > $1.createdAt } // Newest first
-        case .title:
-            filteredStudySets.sort { $0.title < $1.title } // Alphabetical
-        case .cardCount:
-            filteredStudySets.sort { $0.cardCount > $1.cardCount } // Most cards first
-        }
+        updateEmptyState()
     }
     
     private func updateEmptyState() {
-        let isEmpty = filteredStudySets.isEmpty
+        let isEmpty = filteredModules.isEmpty
         tableView.isHidden = isEmpty
         emptyStateView.isHidden = !isEmpty
+        
+        if isEmpty {
+            if modules.isEmpty {
+                emptyStateLabel.text = "No modules yet"
+            } else {
+                emptyStateLabel.text = "No modules found"
+            }
+        }
     }
     
     private func showSortOptions() {
         let alert = UIAlertController(title: "Sort Modules", message: nil, preferredStyle: .actionSheet)
         
-        for option in SortOption.allCases {
-            let action = UIAlertAction(title: option.rawValue, style: .default) { [weak self] _ in
-                self?.currentSortOption = option
-                self?.updateFilteredData()
-            }
-            alert.addAction(action)
+        let actions = [
+            ("Date", {
+                self.filteredModules.sort { ($0.createdAt ?? "") > ($1.createdAt ?? "") }
+                self.tableView.reloadData()
+            }),
+            ("Title A-Z", {
+                self.filteredModules.sort { $0.title.lowercased() < $1.title.lowercased() }
+                self.tableView.reloadData()
+            }),
+            ("Title Z-A", {
+                self.filteredModules.sort { $0.title.lowercased() > $1.title.lowercased() }
+                self.tableView.reloadData()
+            })
+        ]
+        
+        for (title, action) in actions {
+            alert.addAction(UIAlertAction(title: title, style: .default) { _ in action() })
         }
         
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
@@ -274,29 +378,37 @@ class LibraryViewController: BaseViewController {
         present(alert, animated: true)
     }
     
-    // Helper method to get color for specific index
     private func getColorForIndex(_ index: Int) -> UIColor {
         return cellColors[index % cellColors.count]
+    }
+    
+    private func showError(message: String) {
+        let alert = UIAlertController(
+            title: "Error",
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 
 // MARK: - UITableViewDataSource & UITableViewDelegate
 extension LibraryViewController: UITableViewDataSource, UITableViewDelegate {
-    func numberOfSections(in tableView: UITableView) -> Int {
-        return filteredStudySets.count // Each cell is in its own section
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return 1
     }
     
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 1 // One row per section
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return filteredModules.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ModuleCell", for: indexPath) as! ModuleCell
-        let studySet = filteredStudySets[indexPath.section] // Use section instead of row
+        let module = filteredModules[indexPath.section]
         
-        // Get the color for this cell based on its position
         let backgroundColor = getColorForIndex(indexPath.section)
-        cell.configure(with: studySet, backgroundColor: backgroundColor)
+        cell.configure(with: module, backgroundColor: backgroundColor)
         
         return cell
     }
@@ -306,7 +418,7 @@ extension LibraryViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return 8 // Space between cells
+        return 8
     }
     
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
@@ -317,15 +429,21 @@ extension LibraryViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let studySet = filteredStudySets[indexPath.section] // Use section instead of row
-        // TODO: Navigate to set detail view
-        print("Selected: \(studySet.title)")
+        let module = filteredModules[indexPath.section]
+        print("Selected: \(module.title)")
+        
+        // TODO: Navigate to module detail
+        // For now, show module info
+        let alert = UIAlertController(
+            title: module.title,
+            message: """
+            ID: \(module.id)
+            Description: \(module.description ?? "No description")
+            Private: \(module.isPrivate ? "Yes" : "No")
+            """,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
-}
-
-// MARK: - StudySet Model
-struct StudySett {
-    let title: String
-    let cardCount: Int
-    let createdAt: Date
 }
