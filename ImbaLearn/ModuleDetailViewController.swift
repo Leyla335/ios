@@ -103,11 +103,24 @@ class ModuleDetailViewController: BaseViewController {
         cardIcon.translatesAutoresizingMaskIntoConstraints = false
         button.addSubview(cardIcon)
         
+        // Add star icon (initially hidden)
+        let starIcon = UIImageView(image: UIImage(systemName: "star.fill"))
+        starIcon.tintColor = .gray
+        starIcon.translatesAutoresizingMaskIntoConstraints = false
+        starIcon.isHidden = true
+        starIcon.tag = 999 // Tag to identify the star icon
+        button.addSubview(starIcon)
+        
         NSLayoutConstraint.activate([
             cardIcon.leadingAnchor.constraint(equalTo: button.leadingAnchor, constant: 16),
             cardIcon.centerYAnchor.constraint(equalTo: button.centerYAnchor),
             cardIcon.widthAnchor.constraint(equalToConstant: 24),
-            cardIcon.heightAnchor.constraint(equalToConstant: 24)
+            cardIcon.heightAnchor.constraint(equalToConstant: 24),
+            
+            starIcon.topAnchor.constraint(equalTo: button.topAnchor, constant: 8),
+            starIcon.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -12),
+            starIcon.widthAnchor.constraint(equalToConstant: 16),
+            starIcon.heightAnchor.constraint(equalToConstant: 16)
         ])
         
         return button
@@ -328,6 +341,9 @@ class ModuleDetailViewController: BaseViewController {
                         
                         // Update terms count label with actual count
                         self.updateTermsCountLabel()
+                        
+                        // Update cards mode button state
+                        self.updateCardsModeButton()
                     } else {
                         self.showError(message: response.message)
                     }
@@ -347,6 +363,42 @@ class ModuleDetailViewController: BaseViewController {
     private func updateTermsCountLabel() {
         let actualTermsCount = terms.count
         termsCountLabel.text = "\(actualTermsCount) term\(actualTermsCount == 1 ? "" : "s")"
+    }
+    
+    private func updateCardsModeButton() {
+        if showOnlyFavorites {
+            // Show star icon when in Favorites mode
+            if let starIcon = cardsModeButton.viewWithTag(999) as? UIImageView {
+                starIcon.isHidden = false
+                starIcon.tintColor = .gray
+            }
+            
+            // Check if there are any favorites
+            let favoriteTerms = terms.filter { $0.isStarred }
+            if favoriteTerms.isEmpty {
+                // Disable button if no favorites
+                cardsModeButton.isEnabled = false
+                cardsModeButton.alpha = 0.5
+            } else {
+                // Enable button if there are favorites
+                cardsModeButton.isEnabled = true
+                cardsModeButton.alpha = 1.0
+            }
+        } else {
+            // Hide star icon when in All mode
+            if let starIcon = cardsModeButton.viewWithTag(999) as? UIImageView {
+                starIcon.isHidden = true
+            }
+            
+            // Check if there are any terms
+            if terms.isEmpty {
+                cardsModeButton.isEnabled = false
+                cardsModeButton.alpha = 0.5
+            } else {
+                cardsModeButton.isEnabled = true
+                cardsModeButton.alpha = 1.0
+            }
+        }
     }
     
     private func loadCreatorInfo() {
@@ -454,17 +506,58 @@ class ModuleDetailViewController: BaseViewController {
     }
     
     @objc private func cardsModeTapped() {
+        print("🎯 Cards button tapped - Mode: \(showOnlyFavorites ? "Favorites" : "All")")
+        
+        // Get the terms to show based on current filter
+        let termsToShow = showOnlyFavorites ? terms.filter { $0.isStarred } : terms
+        
+        // Check if there are terms to show
+        if termsToShow.isEmpty {
+            if showOnlyFavorites {
+                // Show alert for no favorites
+                let alert = UIAlertController(
+                    title: "No Favorite Terms",
+                    message: "You don't have any favorite terms in this module. Add some favorites first to use Cards Mode with favorites.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                present(alert, animated: true)
+            } else {
+                // Show alert for no terms at all
+                let alert = UIAlertController(
+                    title: "No Terms",
+                    message: "This module doesn't have any terms yet. Add some terms first to use Cards Mode.",
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                present(alert, animated: true)
+            }
+            return
+        }
+        
+        // Open cards mode with filtered terms
         let cardsVC = CardsModeViewController()
         cardsVC.module = module
-        cardsVC.terms = terms  // Pass the already-loaded terms
-        navigationController?.pushViewController(cardsVC, animated: true)
-        print("cards mode tapped")
+        cardsVC.terms = termsToShow
+        
+        // Add callback to refresh terms when returning
+        cardsVC.onFavoriteUpdate = { [weak self] in
+            self?.loadModuleDetails() // Reload terms to get updated favorites
+        }
+        
+        if let navController = navigationController {
+            navController.pushViewController(cardsVC, animated: true)
+        } else {
+            cardsVC.modalPresentationStyle = .fullScreen
+            present(cardsVC, animated: true)
+        }
     }
     
     @objc private func filterChanged() {
         showOnlyFavorites = filterSegmentedControl.selectedSegmentIndex == 1
         updateFilteredTerms()
         tableView.reloadData()
+        updateCardsModeButton() // Update button when filter changes
     }
     
     private func showModuleMenu() {
@@ -563,6 +656,9 @@ class ModuleDetailViewController: BaseViewController {
             if let cell = tableView.cellForRow(at: indexPath) as? ModuleTermCell {
                 cell.configure(with: terms[index])
             }
+            
+            // Update cards mode button state
+            updateCardsModeButton()
         }
         
         // Call API to update on server
@@ -576,6 +672,7 @@ class ModuleDetailViewController: BaseViewController {
                     if let index = self?.terms.firstIndex(where: { $0.id == term.id }) {
                         self?.terms[index] = updatedTerm
                         self?.updateFilteredTerms()
+                        self?.updateCardsModeButton()
                     }
                     
                 case .failure(let error):
@@ -590,6 +687,9 @@ class ModuleDetailViewController: BaseViewController {
                         if let cell = self?.tableView.cellForRow(at: indexPath) as? ModuleTermCell {
                             cell.configure(with: self!.terms[index])
                         }
+                        
+                        // Update cards mode button state
+                        self?.updateCardsModeButton()
                         
                         // Show error to user
                         self?.showError(message: "Failed to update favorite: \(error.localizedDescription)")
