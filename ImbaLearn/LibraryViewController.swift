@@ -135,11 +135,6 @@ class LibraryViewController: BaseViewController {
     private var isLoading = false
     private var termsCountCache: [String: Int] = [:] // Cache for terms count
     
-    private let cellColors: [UIColor] = [
-        .color3.withAlphaComponent(0.6),
-        .color.withAlphaComponent(0.6),
-        .gray.withAlphaComponent(0.2)
-    ]
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -331,8 +326,7 @@ class LibraryViewController: BaseViewController {
                         
                         // Update the cell if it's visible
                         if let cell = self.tableView.cellForRow(at: indexPath) as? ModuleCell {
-                            let backgroundColor = self.getColorForIndex(index)
-                            cell.configure(with: module, backgroundColor: backgroundColor, termsCount: count)
+                            cell.configure(with: module, backgroundColor: .white, termsCount: count)
                         }
                     }
                 }
@@ -426,10 +420,6 @@ class LibraryViewController: BaseViewController {
         present(alert, animated: true)
     }
     
-    private func getColorForIndex(_ index: Int) -> UIColor {
-        return cellColors[index % cellColors.count]
-    }
-    
     private func showError(message: String) {
         let alert = UIAlertController(
             title: "Error",
@@ -455,12 +445,11 @@ extension LibraryViewController: UITableViewDataSource, UITableViewDelegate {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ModuleCell", for: indexPath) as! ModuleCell
         let module = filteredModules[indexPath.section]
         
-        let backgroundColor = getColorForIndex(indexPath.section)
         
         // Get cached terms count or use progress data as fallback
         let termsCount = termsCountCache[module.id] ?? module.progress?.total ?? 0
         
-        cell.configure(with: module, backgroundColor: backgroundColor, termsCount: termsCount)
+        cell.configure(with: module, backgroundColor: .white, termsCount: termsCount)
         
         return cell
     }
@@ -470,7 +459,7 @@ extension LibraryViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return 8
+        return 4
     }
     
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {

@@ -92,16 +92,16 @@ class ModuleDetailViewController: BaseViewController {
     private lazy var cardsModeButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Cards", for: .normal)
-        button.setTitleColor(.black, for: .normal)
+        button.setTitleColor(.white, for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-        button.backgroundColor = .color.withAlphaComponent(0.3)
+        button.backgroundColor = .pinkButton
         button.layer.cornerRadius = 12
         button.addTarget(self, action: #selector(cardsModeTapped), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         
         // Add card icon
         let cardIcon = UIImageView(image: UIImage(systemName: "rectangle.fill.on.rectangle.fill"))
-        cardIcon.tintColor = .pinkButton
+        cardIcon.tintColor = .white
         cardIcon.translatesAutoresizingMaskIntoConstraints = false
         button.addSubview(cardIcon)
         

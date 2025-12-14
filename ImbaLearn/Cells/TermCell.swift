@@ -14,7 +14,8 @@ class TermCell: UITableViewCell {
         textField.borderStyle = .none
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 8
-        textField.layer.masksToBounds = true
+         textField.applyShadow()
+        textField.layer.masksToBounds = false
         textField.translatesAutoresizingMaskIntoConstraints = false
         
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 8, height: textField.frame.height))
@@ -30,7 +31,8 @@ class TermCell: UITableViewCell {
         textField.borderStyle = .none
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 8
-        textField.layer.masksToBounds = true
+        textField.applyShadow()
+        textField.layer.masksToBounds = false
         textField.translatesAutoresizingMaskIntoConstraints = false
         
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 8, height: textField.frame.height))

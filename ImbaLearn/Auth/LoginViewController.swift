@@ -25,6 +25,7 @@ class LoginViewController: BaseViewController {
     private lazy var headerView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .pinkButton.withAlphaComponent(0.7)
         return view
     }()
     
@@ -55,7 +56,7 @@ class LoginViewController: BaseViewController {
         textField.keyboardType = .emailAddress
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 12
-        textField.layer.masksToBounds = true
+        textField.applyShadow()
         textField.translatesAutoresizingMaskIntoConstraints = false
         
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: textField.frame.height))
@@ -80,7 +81,7 @@ class LoginViewController: BaseViewController {
         textField.borderStyle = .none
         textField.isSecureTextEntry = true
         textField.layer.cornerRadius = 12
-        textField.layer.masksToBounds = true
+        textField.applyShadow()
         textField.backgroundColor = .white
         textField.translatesAutoresizingMaskIntoConstraints = false
         
@@ -125,7 +126,6 @@ class LoginViewController: BaseViewController {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
-        setupGradientHeader()
         setupTextFields()
         
         
@@ -162,25 +162,25 @@ class LoginViewController: BaseViewController {
         setupKeyboardAvoidance(with: scrollView)
     }
     
-    private func setupGradientHeader() {
-        // Create gradient layer
-        let gradientLayer = CAGradientLayer()
-        gradientLayer.colors = [
-            UIColor.pinkButton.withAlphaComponent(0.7).cgColor, // Lighter pink
-            UIColor.greenButton.withAlphaComponent(0.7).cgColor
-        ]
-        gradientLayer.locations = [0.0, 1.0]
-        gradientLayer.startPoint = CGPoint(x: 0.0, y: 0.5)
-        gradientLayer.endPoint = CGPoint(x: 1.0, y: 0.5)
-        
-        // Set the frame after layout
-        DispatchQueue.main.async {
-            gradientLayer.frame = self.headerView.bounds
-        }
-        
-        headerView.layer.insertSublayer(gradientLayer, at: 0)
-    }
-    
+//    private func setupGradientHeader() {
+//        // Create gradient layer
+//        let gradientLayer = CAGradientLayer()
+//        gradientLayer.colors = [
+//            UIColor.pinkButton.withAlphaComponent(0.7).cgColor, // Lighter pink
+//            UIColor.greenButton.withAlphaComponent(0.7).cgColor
+//        ]
+//        gradientLayer.locations = [0.0, 1.0]
+//        gradientLayer.startPoint = CGPoint(x: 0.0, y: 0.5)
+//        gradientLayer.endPoint = CGPoint(x: 1.0, y: 0.5)
+//        
+//        // Set the frame after layout
+//        DispatchQueue.main.async {
+//            gradientLayer.frame = self.headerView.bounds
+//        }
+//        
+//        headerView.layer.insertSublayer(gradientLayer, at: 0)
+//    }
+//    
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         // Update gradient layer frame when view layout changes

@@ -19,7 +19,7 @@ class ChangePasswordViewController: BaseViewController {
     
     private lazy var headerView: UIView = {
         let view = UIView()
-        view.backgroundColor = .color3
+        view.backgroundColor = .pinkButton.withAlphaComponent(0.7)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -28,7 +28,7 @@ class ChangePasswordViewController: BaseViewController {
     private lazy var backButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "chevron.left"), for: .normal)
-        button.tintColor = .text
+        button.tintColor = .white
         button.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
@@ -37,7 +37,7 @@ class ChangePasswordViewController: BaseViewController {
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.text = "Change Password"
-        label.textColor = .text
+        label.textColor = .white
         label.font = .systemFont(ofSize: 32, weight: .bold)
         label.alpha = 1
         label.textAlignment = .center
@@ -61,8 +61,8 @@ class ChangePasswordViewController: BaseViewController {
         textField.borderStyle = .none
         textField.isSecureTextEntry = true
         textField.backgroundColor = .white
+        textField.applyShadow()
         textField.layer.cornerRadius = 12
-        textField.layer.masksToBounds = true
         textField.translatesAutoresizingMaskIntoConstraints = false
         
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: textField.frame.height))
@@ -99,7 +99,7 @@ class ChangePasswordViewController: BaseViewController {
         textField.isSecureTextEntry = true
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 12
-        textField.layer.masksToBounds = true
+        textField.applyShadow()
         textField.translatesAutoresizingMaskIntoConstraints = false
         
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: textField.frame.height))
@@ -136,7 +136,7 @@ class ChangePasswordViewController: BaseViewController {
         textField.isSecureTextEntry = true
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 12
-        textField.layer.masksToBounds = true
+        textField.applyShadow()
         textField.translatesAutoresizingMaskIntoConstraints = false
         
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: textField.frame.height))

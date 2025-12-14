@@ -114,7 +114,7 @@ class AccountViewController: BaseViewController {
         textField.borderStyle = .none
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 12
-        textField.layer.masksToBounds = true
+        textField.applyShadow()
         textField.isEnabled = false
         textField.text = "Loading..."
         textField.translatesAutoresizingMaskIntoConstraints = false
@@ -142,7 +142,7 @@ class AccountViewController: BaseViewController {
         textField.borderStyle = .none
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 12
-        textField.layer.masksToBounds = true
+        textField.applyShadow()
         textField.isEnabled = false
         textField.text = "loading..."
         textField.keyboardType = .emailAddress
@@ -172,7 +172,7 @@ class AccountViewController: BaseViewController {
         textField.borderStyle = .none
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 12
-        textField.layer.masksToBounds = true
+        textField.applyShadow()
         textField.isSecureTextEntry = true
         textField.isEnabled = false
         textField.translatesAutoresizingMaskIntoConstraints = false

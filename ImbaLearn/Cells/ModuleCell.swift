@@ -48,6 +48,16 @@ class ModuleCell: UITableViewCell {
         return stack
     }()
     
+    // MARK: - Container View for Shadow and Spacing
+    private lazy var containerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .white
+        view.layer.cornerRadius = 12
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.applyShadowForView()
+        return view
+    }()
+    
     // MARK: - Initialization
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -62,21 +72,33 @@ class ModuleCell: UITableViewCell {
     // MARK: - Setup
     private func setupUI() {
         backgroundColor = .clear
-        contentView.layer.cornerRadius = 12
-        contentView.layer.masksToBounds = true
+        contentView.backgroundColor = .clear
         
-        contentView.addSubview(mainStack)
+        // Add container view to content view
+        contentView.addSubview(containerView)
+        
+        // Add main stack to container view
+        containerView.addSubview(mainStack)
     }
     
     private func setupConstraints() {
-        let padding: CGFloat = 16
+        let containerPadding: CGFloat = 4
+        let contentPadding: CGFloat = 16
         
         NSLayoutConstraint.activate([
-            mainStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: padding),
-            mainStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -padding),
-            mainStack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-            mainStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12),
+            // Container view constraints with spacing from cell edges
+            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: containerPadding),
+            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -containerPadding),
+            containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 2),
+            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -2),
             
+            // Main stack constraints inside container
+            mainStack.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: contentPadding),
+            mainStack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -contentPadding),
+            mainStack.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 12),
+            mainStack.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -12),
+            
+            // Private icon size constraints
             privateIcon.widthAnchor.constraint(equalToConstant: 20),
             privateIcon.heightAnchor.constraint(equalToConstant: 20)
         ])
@@ -98,6 +120,15 @@ class ModuleCell: UITableViewCell {
         // Show lock icon for private modules
         privateIcon.isHidden = !module.isPrivate
         
-        contentView.backgroundColor = backgroundColor
+        // Set background color on container view instead of contentView
+        containerView.backgroundColor = backgroundColor
+    }
+    
+    // MARK: - Prepare for Reuse
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        // Reset container view properties if needed
+        containerView.backgroundColor = .white
+        privateIcon.isHidden = true
     }
 }

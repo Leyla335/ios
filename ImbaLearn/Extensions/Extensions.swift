@@ -23,3 +23,14 @@ extension UITextField {
         layer.masksToBounds = false
     }
 }
+
+extension UIView {
+    func applyShadowForView() {
+        layer.masksToBounds = false
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOffset = CGSize(width: 0, height: 2)
+        layer.shadowRadius = 4
+        layer.shadowOpacity = 0.1
+
+    }
+}

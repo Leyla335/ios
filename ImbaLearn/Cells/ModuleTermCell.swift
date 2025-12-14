@@ -14,14 +14,8 @@ class ModuleTermCell: UITableViewCell {
         let view = UIView()
         view.backgroundColor = .white
         view.layer.cornerRadius = 12
-        view.layer.masksToBounds = false
         view.translatesAutoresizingMaskIntoConstraints = false
-        
-        // Shadow
-        view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOffset = CGSize(width: 0, height: 2)
-        view.layer.shadowRadius = 4
-        view.layer.shadowOpacity = 0.1
+        view.applyShadowForView()
         return view
     }()
     

@@ -26,15 +26,14 @@ class CreateSetViewController: BaseViewController {
     private lazy var headerView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .color
+        view.backgroundColor = .pinkButton.withAlphaComponent(0.7)
         return view
     }()
     
     private lazy var headerTitleLabel: UILabel = {
         let label = UILabel()
         label.text = "Create New Module"
-        label.textColor = .black
-        label.alpha = 0.6
+        label.textColor = .white
         label.font = .systemFont(ofSize: 24, weight: .bold)
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -54,9 +53,10 @@ class CreateSetViewController: BaseViewController {
         let textField = UITextField()
         textField.placeholder = "Enter module title"
         textField.borderStyle = .none
+        textField.applyShadow()
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 12
-        textField.layer.masksToBounds = true
+        textField.layer.masksToBounds = false
         textField.translatesAutoresizingMaskIntoConstraints = false
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: textField.frame.height))
         textField.leftView = paddingView
@@ -80,7 +80,8 @@ class CreateSetViewController: BaseViewController {
         textField.borderStyle = .none
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 12
-        textField.layer.masksToBounds = true
+        textField.applyShadow()
+        textField.layer.masksToBounds = false
         textField.translatesAutoresizingMaskIntoConstraints = false
         
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: textField.frame.height))

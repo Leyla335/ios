@@ -24,7 +24,7 @@ class RegisterViewController: BaseViewController {
     
     private lazy var headerView: UIView = {
         let view = UIView()
-        view.backgroundColor = .color3
+        view.backgroundColor = .pinkButton.withAlphaComponent(0.7)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -32,7 +32,7 @@ class RegisterViewController: BaseViewController {
     private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.text = "Register"
-        label.textColor = .text
+        label.textColor = .white
         label.font = .systemFont(ofSize: 32, weight: .bold)
         label.alpha = 1
         label.textAlignment = .center
@@ -56,7 +56,7 @@ class RegisterViewController: BaseViewController {
         textField.autocapitalizationType = .words
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 12
-        textField.layer.masksToBounds = true
+        textField.applyShadow()
         textField.translatesAutoresizingMaskIntoConstraints = false
         
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: textField.frame.height))
@@ -83,7 +83,7 @@ class RegisterViewController: BaseViewController {
         textField.keyboardType = .emailAddress
         textField.backgroundColor = .white
         textField.layer.cornerRadius = 12
-        textField.layer.masksToBounds = true
+        textField.applyShadow()
         textField.translatesAutoresizingMaskIntoConstraints = false
         
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: textField.frame.height))
@@ -108,7 +108,7 @@ class RegisterViewController: BaseViewController {
         textField.borderStyle = .none
         textField.isSecureTextEntry = true
         textField.layer.cornerRadius = 12
-        textField.layer.masksToBounds = true
+        textField.applyShadow()
         textField.backgroundColor = .white
         textField.translatesAutoresizingMaskIntoConstraints = false
         
@@ -134,7 +134,7 @@ class RegisterViewController: BaseViewController {
         textField.borderStyle = .none
         textField.isSecureTextEntry = true
         textField.layer.cornerRadius = 12
-        textField.layer.masksToBounds = true
+        textField.applyShadow()
         textField.backgroundColor = .white
         textField.translatesAutoresizingMaskIntoConstraints = false
         
