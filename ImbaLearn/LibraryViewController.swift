@@ -86,6 +86,7 @@ class LibraryViewController: BaseViewController {
         tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
         tableView.register(ModuleCell.self, forCellReuseIdentifier: "ModuleCell")
+        tableView.showsVerticalScrollIndicator = false
         return tableView
     }()
     
@@ -130,11 +131,7 @@ class LibraryViewController: BaseViewController {
     }()
     
     // MARK: - Properties
-    private var modules: [ModuleResponse] = []
-    private var filteredModules: [ModuleResponse] = []
-    private var isLoading = false
-    private var termsCountCache: [String: Int] = [:] // Cache for terms count
-    
+    private let viewModel = LibraryViewModel()
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -142,13 +139,16 @@ class LibraryViewController: BaseViewController {
         setupUI()
         setupConstraints()
         setupTableView()
+        setupViewModelCallbacks()
         loadModules()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        loadModules()
+        viewModel.refreshData()
     }
+    
+    // MARK: - Setup Methods
     
     private func setupUI() {
         view.backgroundColor = .background
@@ -213,162 +213,30 @@ class LibraryViewController: BaseViewController {
     private func setupTableView() {
         tableView.delegate = self
         tableView.dataSource = self
-        tableView.showsVerticalScrollIndicator = false
     }
     
-    // MARK: - API Methods
-    private func loadModules() {
-        guard !isLoading else { return }
+    private func setupViewModelCallbacks() {
+        viewModel.onDataUpdated = { [weak self] in
+            self?.tableView.reloadData()
+        }
         
-        isLoading = true
-        loadingIndicator.startAnimating()
-        tableView.isHidden = true
-        emptyStateView.isHidden = true
+        viewModel.onError = { [weak self] message in
+            self?.showError(message: message)
+        }
         
-        // First, get current user ID if we don't have it
-        if UserDefaults.standard.string(forKey: "currentUserId") == nil {
-            fetchCurrentUserId { [weak self] userId in
-                if let userId = userId {
-                    UserDefaults.standard.set(userId, forKey: "currentUserId")
-                    self?.loadModulesWithUserId(userId)
-                } else {
-                    self?.handleModulesLoadingError("Could not get user ID")
-                }
-            }
-        } else {
-            let userId = UserDefaults.standard.string(forKey: "currentUserId")!
-            loadModulesWithUserId(userId)
+        viewModel.onNavigateToModuleDetail = { [weak self] module in
+            self?.navigateToModuleDetail(with: module)
         }
-    }
-
-    private func loadModulesWithUserId(_ userId: String) {
-        NetworkManager.shared.getUserModules { [weak self] result in
-            guard let self = self else { return }
-            
-            DispatchQueue.main.async {
-                self.isLoading = false
-                self.loadingIndicator.stopAnimating()
-                self.refreshControl.endRefreshing()
-                
-                switch result {
-                case .success(let response):
-                    if response.ok {
-                        // Filter modules to show only the ones created by current user
-                        let allModules = response.data ?? []
-                        
-                        // DEBUG: Log all modules and user IDs
-                        print("🔍 DEBUG: All modules received: \(allModules.count)")
-                        for (index, module) in allModules.enumerated() {
-                            print("Module \(index): \(module.title)")
-                            print("  - Module userId: \(module.userId)")
-                            print("  - Current userId: \(userId)")
-                            print("  - Match: \(module.userId == userId)")
-                        }
-                        
-                        self.modules = allModules.filter { module in
-                            module.userId == userId
-                        }
-                        
-                        print("✅ Showing \(self.modules.count) user modules out of \(allModules.count) total")
-                        
-                        // If no modules after filtering, maybe show all?
-                        if self.modules.isEmpty && !allModules.isEmpty {
-                            print("⚠️ WARNING: Filtered out all modules! Showing all modules instead.")
-                            self.modules = allModules
-                        }
-                        
-                        // Load terms count for all modules
-                        self.loadTermsCountForAllModules()
-                        
-                        self.updateFilteredData()
-                        self.tableView.reloadData()
-                        self.updateEmptyState()
-                        self.tableView.isHidden = false
-                    } else {
-                        self.showError(message: response.message)
-                        self.updateEmptyState()
-                    }
-                    
-                case .failure(let error):
-                    self.showError(message: error.localizedDescription)
-                    self.updateEmptyState()
-                }
-            }
-        }
-    }
-
-    private func fetchCurrentUserId(completion: @escaping (String?) -> Void) {
-        NetworkManager.shared.getUserProfile { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let response):
-                    if response.ok {
-                        let userId = response.data.id
-                        completion(userId)
-                    } else {
-                        completion(nil)
-                    }
-                case .failure:
-                    completion(nil)
-                }
-            }
-        }
-    }
-
-    private func handleModulesLoadingError(_ message: String) {
-        isLoading = false
-        loadingIndicator.stopAnimating()
-        refreshControl.endRefreshing()
-        showError(message: message)
-        updateEmptyState()
-    }
-    
-    private func loadTermsCountForAllModules() {
-        // Clear previous cache
-        termsCountCache.removeAll()
         
-        // Load terms count for each module
-        for module in modules {
-            loadTermsCount(for: module) { [weak self] count in
-                guard let self = self else { return }
-                
-                DispatchQueue.main.async {
-                    // Cache the result
-                    self.termsCountCache[module.id] = count ?? 0
-                    
-                    // Find the index of this module in filteredModules
-                    if let index = self.filteredModules.firstIndex(where: { $0.id == module.id }) {
-                        let indexPath = IndexPath(row: 0, section: index)
-                        
-                        // Update the cell if it's visible
-                        if let cell = self.tableView.cellForRow(at: indexPath) as? ModuleCell {
-                            cell.configure(with: module, backgroundColor: .white, termsCount: count)
-                        }
-                    }
-                }
-            }
+        viewModel.onUpdateEmptyState = { [weak self] shouldShow, message in
+            self?.updateEmptyState(shouldShow: shouldShow, message: message)
         }
     }
     
-    private func loadTermsCount(for module: ModuleResponse, completion: @escaping (Int?) -> Void) {
-        NetworkManager.shared.getModuleTerms(moduleId: module.id) { result in
-            switch result {
-            case .success(let response):
-                if response.ok {
-                    let termsCount = response.data?.data.count ?? 0
-                    completion(termsCount)
-                } else {
-                    completion(nil)
-                }
-            case .failure:
-                completion(nil)
-            }
-        }
-    }
+    // MARK: - Actions
     
-    // MARK: - Helper Methods
     @objc private func searchTextChanged() {
-        updateFilteredData()
+        viewModel.searchModules(with: searchTextField.text ?? "")
     }
     
     @objc private func sortButtonTapped() {
@@ -376,60 +244,44 @@ class LibraryViewController: BaseViewController {
     }
     
     @objc private func refreshData() {
-        loadModules()
+        viewModel.refreshData()
     }
     
-    private func updateFilteredData() {
-        let searchText = searchTextField.text?.lowercased() ?? ""
+    // MARK: - Helper Methods
+    
+    private func loadModules() {
+        loadingIndicator.startAnimating()
+        tableView.isHidden = true
+        emptyStateView.isHidden = true
         
-        if searchText.isEmpty {
-            filteredModules = modules
-        } else {
-            filteredModules = modules.filter { module in
-                module.title.lowercased().contains(searchText) ||
-                (module.description?.lowercased().contains(searchText) ?? false)
-            }
-        }
-        
-        tableView.reloadData()
-        updateEmptyState()
+        viewModel.loadModules()
     }
     
-    private func updateEmptyState() {
-        let isEmpty = filteredModules.isEmpty
-        tableView.isHidden = isEmpty
-        emptyStateView.isHidden = !isEmpty
+    private func updateEmptyState(shouldShow: Bool, message: String) {
+        tableView.isHidden = shouldShow
+        emptyStateView.isHidden = !shouldShow
+        emptyStateLabel.text = message
         
-        if isEmpty {
-            if modules.isEmpty {
-                emptyStateLabel.text = "No modules yet"
-            } else {
-                emptyStateLabel.text = "No modules found"
-            }
+        if !shouldShow {
+            loadingIndicator.stopAnimating()
+            refreshControl.endRefreshing()
         }
     }
     
     private func showSortOptions() {
         let alert = UIAlertController(title: "Sort Modules", message: nil, preferredStyle: .actionSheet)
         
-        let actions = [
-            ("Date", {
-                self.filteredModules.sort { ($0.createdAt ?? "") > ($1.createdAt ?? "") }
-                self.tableView.reloadData()
-            }),
-            ("Title A-Z", {
-                self.filteredModules.sort { $0.title.lowercased() < $1.title.lowercased() }
-                self.tableView.reloadData()
-            }),
-            ("Title Z-A", {
-                self.filteredModules.sort { $0.title.lowercased() > $1.title.lowercased() }
-                self.tableView.reloadData()
-            })
-        ]
+        alert.addAction(UIAlertAction(title: "Date", style: .default) { [weak self] _ in
+            self?.viewModel.sortModules(by: .date)
+        })
         
-        for (title, action) in actions {
-            alert.addAction(UIAlertAction(title: title, style: .default) { _ in action() })
-        }
+        alert.addAction(UIAlertAction(title: "Title A-Z", style: .default) { [weak self] _ in
+            self?.viewModel.sortModules(by: .titleAscending)
+        })
+        
+        alert.addAction(UIAlertAction(title: "Title Z-A", style: .default) { [weak self] _ in
+            self?.viewModel.sortModules(by: .titleDescending)
+        })
         
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         
@@ -437,6 +289,9 @@ class LibraryViewController: BaseViewController {
     }
     
     private func showError(message: String) {
+        loadingIndicator.stopAnimating()
+        refreshControl.endRefreshing()
+        
         let alert = UIAlertController(
             title: "Error",
             message: message,
@@ -444,6 +299,22 @@ class LibraryViewController: BaseViewController {
         )
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
+    }
+    
+    private func navigateToModuleDetail(with module: ModuleResponse) {
+        print("🔍 Tapped module: \(module.title)")
+        
+        let detailVC = ModuleDetailViewController()
+        detailVC.module = module
+        
+        if let navController = navigationController {
+            navController.pushViewController(detailVC, animated: true)
+        } else if let parentNav = parent as? UINavigationController {
+            parentNav.pushViewController(detailVC, animated: true)
+        } else {
+            detailVC.modalPresentationStyle = .fullScreen
+            present(detailVC, animated: true)
+        }
     }
 }
 
@@ -454,18 +325,16 @@ extension LibraryViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func numberOfSections(in tableView: UITableView) -> Int {
-        return filteredModules.count
+        return viewModel.numberOfSections
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ModuleCell", for: indexPath) as! ModuleCell
-        let module = filteredModules[indexPath.section]
         
-        
-        // Get cached terms count or use progress data as fallback
-        let termsCount = termsCountCache[module.id] ?? module.progress?.total ?? 0
-        
-        cell.configure(with: module, backgroundColor: .white, termsCount: termsCount)
+        if let module = viewModel.getModule(at: indexPath) {
+            let termsCount = viewModel.getTermsCount(for: module.id)
+            cell.configure(with: module, backgroundColor: .white, termsCount: termsCount)
+        }
         
         return cell
     }
@@ -486,21 +355,9 @@ extension LibraryViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let module = filteredModules[indexPath.section]
         
-        print("🔍 Tapped module: \(module.title)")
-        
-        // Navigate to module detail
-        let detailVC = ModuleDetailViewController()
-        detailVC.module = module
-        
-        if let navController = navigationController {
-            navController.pushViewController(detailVC, animated: true)
-        } else if let parentNav = parent as? UINavigationController {
-            parentNav.pushViewController(detailVC, animated: true)
-        } else {
-            detailVC.modalPresentationStyle = .fullScreen
-            present(detailVC, animated: true)
+        if let module = viewModel.getModule(at: indexPath) {
+            viewModel.onNavigateToModuleDetail?(module)
         }
     }
 }
