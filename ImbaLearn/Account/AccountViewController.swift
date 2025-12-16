@@ -220,7 +220,6 @@ class AccountViewController: BaseViewController {
         override func viewDidLoad() {
             super.viewDidLoad()
             setupUI()
-            setupConstraints()
           //  setupTextFields()
             setupViewModelCallbacks()
             setupAvatarGesture()
@@ -252,6 +251,7 @@ class AccountViewController: BaseViewController {
             
             // Add all elements to content view
             contentView.addSubviews(avatarContainer, nameFieldLabel, nameTextField, emailFieldLabel, emailTextField, passwordLabel, passwordTextField, changePasswordButton, logoutButton, deleteAccountButton)
+            setupConstraints()
         }
         
         private func setupAvatarGesture() {
@@ -382,35 +382,8 @@ class AccountViewController: BaseViewController {
     }
     
     private func setupViewModelCallbacks() {
-            viewModel.onUserDataUpdated = { [weak self] user in
-                self?.updateUI(with: user)
-            }
-            
-            viewModel.onProfileImageUpdated = { [weak self] image in
-                self?.updateProfileImage(image)
-            }
-            
-            viewModel.onError = { [weak self] message in
-                self?.showError(message: message)
-            }
-            
-            viewModel.onLogoutSuccess = { [weak self] in
-                self?.navigateToAuthentication()
-            }
-            
-            viewModel.onAccountDeleteSuccess = { [weak self] in
-                let alert = UIAlertController(
-                    title: "Account Deleted",
-                    message: "Your account has been successfully deleted.",
-                    preferredStyle: .alert
-                )
-                alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
-                    self?.navigateToAuthentication()
-                })
-                self?.present(alert, animated: true)
-            }
-        }
-        
+        viewModel.delegate = self
+    }
     
     // MARK: - UI Updates
     private func updateUI(with user: User?) {
@@ -489,14 +462,15 @@ class AccountViewController: BaseViewController {
     }
     
     @objc private func logoutTapped() {
-        let alert = UIAlertController(title: "Logout",
-                                    message: "Are you sure you want to logout?",
-                                    preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Logout", style: .destructive) { [weak self] _ in
-            self?.viewModel.performLogout()
-        })
-        present(alert, animated: true)
+        showAlert(
+            title: "Logout",
+            message: "Are you sure you want to logout?",
+            handlers: [
+                UIAlertAction(title: "Cancel", style: .cancel),
+                UIAlertAction(title: "Logout", style: .destructive) { [weak self] _ in
+                    self?.viewModel.performLogout()
+                }
+            ])
     }
     
     @objc private func deleteAccountTapped() {
@@ -540,3 +514,32 @@ extension AccountViewController: ProfileImagePickerDelegate {
     }
 }
 
+extension AccountViewController: AccountViewModelDelegate {
+    func onUserDataUpdated(_ user: User?) {
+        updateUI(with: user)
+    }
+    
+    func onProfileImageUpdated(_ image: UIImage?) {
+        updateProfileImage(image)
+    }
+    
+    func onError(_ message: String) {
+        showError(message: message)
+    }
+    
+    func onLogoutSuccess() {
+        navigateToAuthentication()
+    }
+    
+    func onAccountDeleteSuccess() {
+        let alert = UIAlertController(
+            title: "Account Deleted",
+            message: "Your account has been successfully deleted.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+            self?.navigateToAuthentication()
+        })
+        present(alert, animated: true)
+    }
+}

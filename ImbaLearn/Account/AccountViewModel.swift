@@ -1,7 +1,16 @@
 import Foundation
 import UIKit
 
-class AccountViewModel {
+
+protocol AccountViewModelDelegate: AnyObject {
+    func onUserDataUpdated(_ user: User?) -> Void
+    func onProfileImageUpdated(_ image: UIImage?) -> Void
+    func onError(_ message: String) -> Void
+    func onLogoutSuccess() -> Void
+    func onAccountDeleteSuccess() -> Void
+}
+
+final class AccountViewModel {
     
     // MARK: - Properties
     private(set) var currentUser: User?
@@ -12,12 +21,7 @@ class AccountViewModel {
         }
     }
     
-    // MARK: - Callbacks
-    var onUserDataUpdated: ((User?) -> Void)?
-    var onProfileImageUpdated: ((UIImage?) -> Void)?
-    var onError: ((String) -> Void)?
-    var onLogoutSuccess: (() -> Void)?
-    var onAccountDeleteSuccess: (() -> Void)?
+    weak var delegate: AccountViewModelDelegate?
     
     // MARK: - Initialization
     init() {
@@ -30,7 +34,7 @@ class AccountViewModel {
         if let savedUserData = UserDefaults.standard.data(forKey: "currentUser"),
            let savedUser = try? JSONDecoder().decode(User.self, from: savedUserData) {
             currentUser = savedUser
-            onUserDataUpdated?(savedUser)
+            delegate?.onUserDataUpdated(savedUser)
             print("✅ Loaded user from saved data: \(savedUser.name)")
             
             // Load profile image if user has one
@@ -68,7 +72,7 @@ class AccountViewModel {
                 case .failure(let error):
                     print("❌ Failed to upload profile image: \(error)")
                     // Show error to user
-                    self?.onError?("Failed to upload profile picture. Please try again.")
+                    self?.delegate?.onError("Failed to upload profile picture. Please try again.")
                 }
             }
         }
@@ -102,7 +106,7 @@ class AccountViewModel {
                         self.loadProfileImageFromBackend()
                         
                         // Notify view controller
-                        self.onUserDataUpdated?(user)
+                        self.delegate?.onUserDataUpdated(user)
                         
                         print("✅ Loaded user from API: \(user.name) (\(user.email))")
                     } else {
@@ -121,13 +125,13 @@ class AccountViewModel {
     // MARK: - Profile Image Methods
     func setProfileImage(_ image: UIImage) {
         profileImage = image
-        onProfileImageUpdated?(image)
+        delegate?.onProfileImageUpdated(image)
         uploadProfileImageToBackend(image)
     }
     
     func removeProfileImage() {
         profileImage = nil
-        onProfileImageUpdated?(nil)
+        delegate?.onProfileImageUpdated(nil)
         deleteProfileImageFromBackend()
     }
     
@@ -185,7 +189,7 @@ class AccountViewModel {
             print("✅ Loaded profile image from cache for user: \(user.id)")
             DispatchQueue.main.async {
                 self.profileImage = cachedImage
-                self.onProfileImageUpdated?(cachedImage)
+                self.delegate?.onProfileImageUpdated(cachedImage)
             }
             return
         }
@@ -214,7 +218,7 @@ class AccountViewModel {
                         print("✅ Profile image cached with key: \(cacheKey)")
                     }
                     
-                    self?.onProfileImageUpdated?(image)
+                    self?.delegate?.onProfileImageUpdated(image)
                 }
             }.resume()
         }
@@ -249,12 +253,12 @@ class AccountViewModel {
         if let savedUserData = UserDefaults.standard.data(forKey: "currentUser"),
            let savedUser = try? JSONDecoder().decode(User.self, from: savedUserData) {
             currentUser = savedUser
-            onUserDataUpdated?(savedUser)
+            delegate?.onUserDataUpdated(savedUser)
             print("✅ Loaded user from saved data: \(savedUser.name)")
         } else {
             // Show placeholder data
             currentUser = nil
-            onUserDataUpdated?(nil)
+            delegate?.onUserDataUpdated(nil)
             print("⚠️ No user data found")
         }
     }
@@ -301,7 +305,7 @@ class AccountViewModel {
                 self.clearLocalData()
                 
                 // Notify logout success
-                self.onLogoutSuccess?()
+                self.delegate?.onLogoutSuccess()
             }
         }
     }
@@ -332,7 +336,7 @@ class AccountViewModel {
                     self.clearLocalData()
                     
                     // Notify account deletion success
-                    self.onAccountDeleteSuccess?()
+                    self.delegate?.onAccountDeleteSuccess()
                     
                 case .failure(let error):
                     print("❌ Account deletion failed: \(error)")
@@ -341,10 +345,10 @@ class AccountViewModel {
                     self.clearLocalData()
                     
                     // Show error to user
-                    self.onError?("Failed to delete account on server, but local data was cleared. Error: \(error.localizedDescription)")
+                    self.delegate?.onError("Failed to delete account on server, but local data was cleared. Error: \(error.localizedDescription)")
                     
                     // Still navigate to authentication since we cleared local data
-                    self.onAccountDeleteSuccess?()
+                    self.delegate?.onAccountDeleteSuccess()
                 }
             }
         }

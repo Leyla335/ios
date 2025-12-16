@@ -7,6 +7,8 @@ import Foundation
 
 class LoginViewModel {
     
+    let authRepository: AuthRepository = AuthRepository(apiService: .shared)
+    
     // MARK: - Properties
     private(set) var isLoading = false
     
@@ -51,12 +53,18 @@ class LoginViewModel {
         )
         
         // Call API
-        NetworkManager.shared.login(request: loginRequest) { [weak self] result in
+        /*NetworkManager.shared.login(request: loginRequest) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isLoading = false
                 self?.handleLoginResult(result, email: validatedEmail)
             }
-        }
+        }*/
+        authRepository.login(request: loginRequest, completion: {
+            [weak self] result in
+            guard let self else { return }
+            self.isLoading = false
+            self.handleLoginResult(result, email: validatedEmail)
+        })
     }
     
     func navigateToRegister() {

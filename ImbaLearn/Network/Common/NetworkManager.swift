@@ -545,10 +545,3 @@ class NetworkManager {
         #endif
     }
 }
-
-extension Notification.Name {
-    static let userDidLogout = Notification.Name("userDidLogout")
-    static let sessionExpired = Notification.Name("sessionExpired")
-}
-
-

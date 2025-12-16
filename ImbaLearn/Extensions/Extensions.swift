@@ -34,3 +34,16 @@ extension UIView {
 
     }
 }
+
+extension UIViewController {
+    func showAlert(title: String?, message: String?, handlers: [UIAlertAction]) {
+        let controller = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        handlers.forEach({ controller.addAction($0) })
+        present(controller, animated: true)
+    }
+}
+
+extension Notification.Name {
+    static let userDidLogout = Notification.Name("userDidLogout")
+    static let sessionExpired = Notification.Name("sessionExpired")
+}

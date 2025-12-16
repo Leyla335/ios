@@ -2,11 +2,7 @@ import Foundation
 
 
 // MARK: - Authentication Models
-struct RegisterRequest: Codable {
-    let name: String
-    let email: String
-    let password: String
-}
+
 
 struct LoginRequest: Codable {
     let email: String
@@ -257,12 +253,6 @@ struct UpdateTermRequest: Codable {
         case definition
         case isStarred
     }
-}
-
-struct ResponseModel<T: Decodable>: Decodable {
-    let ok: Bool
-    let message: String
-    let data: T
 }
 
 //typealias AuthResponse = ResponseModel<Void>
